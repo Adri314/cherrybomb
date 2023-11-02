@@ -587,6 +587,12 @@ function boss_attack (boss: Sprite) {
             sprites.setDataNumber(boss, "vx", 0)
             sprites.setDataString(boss, "submission", "mission2")
         }
+        if (!(t % 6 <= 1)) {
+            if (t >= sprites.readDataNumber(boss, "shoot timer")) {
+                fire_from_shooter_at_angle(boss, 0)
+                sprites.setDataNumber(boss, "shoot timer", t + 1)
+            }
+        }
     } else if (sprites.readDataString(boss, "submission") == "mission2") {
         boss.x += sprites.readDataNumber(boss, "vx")
         boss.y += sprites.readDataNumber(boss, "vy")
@@ -603,6 +609,10 @@ function boss_attack (boss: Sprite) {
             sprites.setDataNumber(boss, "vy", 0)
             sprites.setDataString(boss, "submission", "mission3")
         }
+        if (t >= sprites.readDataNumber(boss, "shoot timer")) {
+            aimed_shot_from_shooter_to_target(boss, myShip)
+            sprites.setDataNumber(boss, "shoot timer", t + 3)
+        }
     } else if (sprites.readDataString(boss, "submission") == "mission3") {
         boss.x += sprites.readDataNumber(boss, "vx")
         boss.y += sprites.readDataNumber(boss, "vy")
@@ -611,15 +621,47 @@ function boss_attack (boss: Sprite) {
             sprites.changeDataNumberBy(boss, "counter", 1)
         }
         if (sprites.readDataNumber(boss, "counter") == 4) {
-            sprites.setDataNumber(boss, "counter", 0)
+            sprites.setDataNumber(boss, "counter", 1)
             sprites.setDataNumber(boss, "vy", 1)
             sprites.setDataNumber(boss, "vx", 0)
             sprites.setDataString(boss, "submission", "mission4")
         }
+        if (t >= sprites.readDataNumber(boss, "shoot timer")) {
+            spreadshot_from_shooter_number_of_shots_starting_angle(boss, 8, sprites.readDataNumber(boss, "starting angle"))
+            sprites.changeDataNumberBy(boss, "starting angle", 6)
+            sprites.setDataNumber(boss, "shoot timer", t + 3)
+        }
     } else if (sprites.readDataString(boss, "submission") == "mission4") {
         boss.x += sprites.readDataNumber(boss, "vx")
         boss.y += sprites.readDataNumber(boss, "vy")
-        sprites.setDataString(boss, "submission", "mission1")
+        if (boss.y > 105) {
+            sprites.setDataNumber(boss, "vx", -1)
+            sprites.setDataNumber(boss, "vy", 0)
+        }
+        if (boss.x < 20) {
+            sprites.setDataNumber(boss, "vx", 0)
+            sprites.setDataNumber(boss, "vy", -1)
+        }
+        if (boss.y <= 29) {
+            sprites.setDataNumber(boss, "vx", 1)
+            sprites.setDataNumber(boss, "vy", 0)
+            sprites.setDataString(boss, "submission", "mission1")
+        }
+        if (t >= sprites.readDataNumber(boss, "shoot timer")) {
+            if (sprites.readDataNumber(boss, "vx") < 0) {
+                fire_from_shooter_at_angle(boss, 180)
+            } else if (sprites.readDataNumber(boss, "vy") > 0) {
+                fire_from_shooter_at_angle(boss, 270)
+            } else if (sprites.readDataNumber(boss, "vy") < 0) {
+                fire_from_shooter_at_angle(boss, 90)
+            }
+            sprites.setDataNumber(boss, "shoot timer", t + 4)
+        }
+    } else if (sprites.readDataString(boss, "submission") == "mission5") {
+        sprites.setDataNumber(boss, "vx", 0)
+        sprites.setDataNumber(boss, "vy", 0)
+        boss.x += sprites.readDataNumber(boss, "vx")
+        boss.y += sprites.readDataNumber(boss, "vy")
     }
 }
 function pick_shooter () {
@@ -1374,7 +1416,10 @@ function fire_from_shooter_at_angle (shooter: Sprite, ang: number) {
             3 c 2 2 c 3 
             . 3 c c 3 . 
             . . 3 3 . . 
-            `, shooter, Math.sin(angle) * 100, Math.cos(angle) * 100)
+            `, shooter, Math.sin(angle) * 75, Math.cos(angle) * 75)
+        if (sprites.readDataNumber(shooter, "type") == 5) {
+            projectile.y = shooter.y + 8
+        }
         animation.runImageAnimation(
         projectile,
         [img`
@@ -1519,6 +1564,7 @@ function kill_enemy (sprite: Sprite) {
         pause(300)
         sprites.destroy(sprite)
     } else {
+        sprites.setDataString(sprite, "submission", "mission5")
         explosion_left = sprite.left
         explosion_top = sprite.top
         animation.stopAnimation(animation.AnimationTypes.All, sprite)
@@ -1959,6 +2005,7 @@ function prepare_enemy_attack () {
             50,
             true
             )
+            sprites.setDataNumber(myEnemy, "shoot timer", t + 20)
         } else if (sprites.readDataNumber(myEnemy, "type") == 5) {
             animation.runImageAnimation(
             myEnemy,
@@ -1966,10 +2013,11 @@ function prepare_enemy_attack () {
             100,
             true
             )
+            sprites.setDataNumber(myEnemy, "shoot timer", t + 10)
+            sprites.setDataNumber(myEnemy, "starting angle", 0)
         }
         sprites.setDataString(myEnemy, "mission", "attack")
         sprites.setDataNumber(myEnemy, "wait", 60)
-        sprites.setDataNumber(myEnemy, "shoot timer", t + 20)
     }
 }
 function place_enemies () {
@@ -2656,9 +2704,9 @@ let explosionImages_0: Image = null
 let wave_text: TextSprite = null
 let final_wave = 0
 let wave = 0
-let t = 0
 let flame: Sprite = null
 let myEnemy: Sprite = null
+let t = 0
 let angle = 0
 let mySprite: Sprite = null
 let cherry_text: TextSprite = null
