@@ -9,7 +9,7 @@ namespace SpriteKind {
     export const Explosion = SpriteKind.create()
 }
 function start_screen () {
-    cherryl = img`
+    applel = img`
         ffffffffffffffffffffffffffffffffffffffffffffffdfffffffaaffffffff8aaffafffffffffffffafaaffffa8affffffffafffaaffffffffffffffffffffffffffffffffffffffffffffffffffff
         fffffffffffffffffffffffffffffffffffffffffffffffffffffffaffffffffaaafaaffffafffffffaaaaffffffffffffffffffaaafffffffffffffffffffffffffffffffffffffffffffffffffffff
         ffffffffffffffffffffffffffffffffffffffffffffffffffaffffaffffffffaaaffffffaaffffffaaaaafffffffaffffffffffaaaaffffffffffffafffffffffffffffffffffffffffffffffffffff
@@ -131,7 +131,7 @@ function start_screen () {
         ffffffffffffffffffffffffffffffffffffffffffffffffffffffff8ffffffffffffffffffffff8888888888fff8fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
         fffffffffffffffffffffffffffffffffffffbffffffffffffffffffffffffffffffffffff8ffff888f888888888ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
         `
-    scene.setBackgroundImage(cherryl)
+    scene.setBackgroundImage(applel)
     mode = "start"
     text_button = "Press A to start"
     press_button_text = textsprite.create(text_button)
@@ -315,7 +315,7 @@ function hurt_player (sprite: Sprite) {
 }
 function pop_text_update () {
     for (let value4 of sprites.allOfKind(SpriteKind.Text)) {
-        if (!(sprites.readDataBoolean(value4, "cherryUI"))) {
+        if (!(sprites.readDataBoolean(value4, "appleUI"))) {
             if (sprites.readDataNumber(value4, "age") > 0) {
                 sprites.changeDataNumberBy(value4, "age", -1)
             } else {
@@ -332,12 +332,12 @@ sprites.onOverlap(SpriteKind.Player, SpriteKind.Pickup, function (sprite, otherS
 })
 controller.B.onEvent(ControllerButtonEvent.Pressed, function () {
     if (mode == "game") {
-        if (cher > 0) {
+        if (app > 0) {
             music.play(music.createSoundEffect(WaveShape.Square, 1600, 1, 255, 0, 300, SoundExpressionEffect.None, InterpolationCurve.Curve), music.PlaybackMode.InBackground)
             muzzleFlash(muzzle, myShip)
-            spreadshot_from_shooter_number_of_shots_starting_angle(myShip, cher + 2, 135)
-            cher = 0
-            cherry_text.setText(convertToText(cher))
+            spreadshot_from_shooter_number_of_shots_starting_angle(myShip, app + 2, 135)
+            app = 0
+            apple_text.setText("X" + convertToText(app))
         } else {
             music.play(music.melodyPlayable(music.thump), music.PlaybackMode.InBackground)
         }
@@ -612,7 +612,7 @@ function boss_attack (boss: Sprite) {
         }
         if (t >= sprites.readDataNumber(boss, "shoot timer")) {
             aimed_shot_from_shooter_to_target(boss, myShip)
-            sprites.setDataNumber(boss, "shoot timer", t + 3)
+            sprites.setDataNumber(boss, "shoot timer", t + 4)
         }
     } else if (sprites.readDataString(boss, "submission") == "mission3") {
         boss.x += sprites.readDataNumber(boss, "vx")
@@ -629,7 +629,7 @@ function boss_attack (boss: Sprite) {
         }
         if (t >= sprites.readDataNumber(boss, "shoot timer")) {
             spreadshot_from_shooter_number_of_shots_starting_angle(boss, 8, sprites.readDataNumber(boss, "starting angle"))
-            sprites.changeDataNumberBy(boss, "starting angle", 12)
+            sprites.changeDataNumberBy(boss, "starting angle", 1)
             sprites.setDataNumber(boss, "shoot timer", t + 3)
         }
     } else if (sprites.readDataString(boss, "submission") == "mission4") {
@@ -1352,18 +1352,18 @@ function start_game () {
         ..........66..6666..66..........
         `
     t = 0
-    wave = 8
+    wave = 0
     final_wave = 9
-    cher = 0
+    app = 0
     max_lives = 5
     effects.starField.startScreenEffect()
-    cherry_text = textsprite.create(convertToText(cher), 1, 3)
-    cherry_text.setIcon(assets.image`cherry`)
-    cherry_text.setPosition(80, 4)
-    cherry_text.setBorder(1, 3, 1)
-    cherry_text.z = 0
-    sprites.setDataBoolean(cherry_text, "cherryUI", true)
-    cherry_text.z = 2
+    apple_text = textsprite.create("X" + convertToText(app), 1, 3)
+    apple_text.setIcon(assets.image`myImage`)
+    apple_text.setPosition(80, 4)
+    apple_text.setBorder(1, 3, 1)
+    apple_text.z = 0
+    sprites.setDataBoolean(apple_text, "appleUI", true)
+    apple_text.z = 2
     createShip()
     enemy_muzzle = sprites.create(img`
         . . . . . . . . . . . . . . . . 
@@ -2565,6 +2565,7 @@ function hurt_enemy (sprite: Sprite, bullet: Sprite) {
         }
         if (sprites.readDataNumber(sprite, "hp") <= 0) {
             if (sprites.readDataNumber(sprite, "type") == 5) {
+                sprites.destroyAllSpritesOfKind(SpriteKind.EnemyBullet)
                 sprite.setFlag(SpriteFlag.GhostThroughSprites, true)
                 animation.stopAnimation(animation.AnimationTypes.All, sprite)
                 sprite.setImage(img`
@@ -2649,7 +2650,7 @@ function hurt_enemy (sprite: Sprite, bullet: Sprite) {
     }
 }
 function drop_pickup (x: number, y: number) {
-    cherry = sprites.create(img`
+    apple = sprites.create(img`
         . . . . . . . . . . . . . . . . 
         . . . . . . . . . . . . . . . . 
         . . . . . . . . . . . . . . . . 
@@ -2667,14 +2668,14 @@ function drop_pickup (x: number, y: number) {
         . . . . . . . . . . . . . . . . 
         . . . . . . . . . . . . . . . . 
         `, SpriteKind.Pickup)
-    cherry.setPosition(x, y)
+    apple.setPosition(x, y)
     animation.runImageAnimation(
-    cherry,
-    assets.animation`cherryAnim`,
-    100,
+    apple,
+    assets.animation`appleAnim`,
+    200,
     true
     )
-    cherry.vy = 40
+    apple.vy = 40
 }
 function muzzleFlash (muzzle: Sprite, shooter: Sprite) {
     if (shooter == myShip) {
@@ -2690,28 +2691,28 @@ function muzzleFlash (muzzle: Sprite, shooter: Sprite) {
     )
 }
 function pickup_logic (pickup: Sprite) {
-    if (cher < 9) {
+    if (app < 9) {
         music.play(music.melodyPlayable(music.baDing), music.PlaybackMode.InBackground)
-        cher += 1
+        app += 1
     } else {
         music.play(music.melodyPlayable(music.powerUp), music.PlaybackMode.InBackground)
         if (info.life() < max_lives) {
             pop_text("1Up", pickup.x, pickup.y)
             info.changeLifeBy(1)
-            cher = 0
+            app = 0
         } else {
             pop_text("5000", pickup.x, pickup.y)
             info.changeScoreBy(5000)
-            cher = 0
+            app = 0
         }
     }
     sprites.destroy(pickup, effects.rings, 100)
-    cherry_text.setText(convertToText(cher))
+    apple_text.setText("X" + convertToText(app))
 }
 sprites.onOverlap(SpriteKind.Player, SpriteKind.Enemy, function (sprite, otherSprite) {
     hurt_player(sprite)
 })
-let cherry: Sprite = null
+let apple: Sprite = null
 let textSprite: TextSprite = null
 let level: number[][] = []
 let row: number[] = []
@@ -2739,15 +2740,15 @@ let myEnemy: Sprite = null
 let t = 0
 let angle = 0
 let mySprite: Sprite = null
-let cherry_text: TextSprite = null
+let apple_text: TextSprite = null
 let myShip: Sprite = null
 let muzzle: Sprite = null
-let cher = 0
+let app = 0
 let player_explosion: Sprite = null
 let press_button_text: TextSprite = null
 let text_button = ""
 let mode = ""
-let cherryl: Image = null
+let applel: Image = null
 start_screen()
 game.onUpdate(function () {
     if (mode == "game") {
