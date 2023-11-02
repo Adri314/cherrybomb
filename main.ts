@@ -345,7 +345,7 @@ controller.B.onEvent(ControllerButtonEvent.Pressed, function () {
 })
 sprites.onOverlap(SpriteKind.Bullet, SpriteKind.Enemy, function (sprite, otherSprite) {
     sprites.destroy(sprite)
-    hurt_enemy(otherSprite)
+    hurt_enemy(otherSprite, sprite)
 })
 function spawn_enemy_type_x_y (_type: number, x: number, y: number) {
     mySprite = sprites.create(img`
@@ -417,9 +417,9 @@ function spawn_enemy_type_x_y (_type: number, x: number, y: number) {
         true
         )
         sprites.setDataNumber(mySprite, "type", 5)
-        sprites.setDataNumber(mySprite, "hp", 5)
+        sprites.setDataNumber(mySprite, "hp", 100)
         sprites.setDataNumber(mySprite, "score", 10000)
-        mySprite.setFlag(SpriteFlag.ShowPhysics, true)
+        mySprite.setFlag(SpriteFlag.ShowPhysics, false)
     }
     sprites.setDataString(mySprite, "mission", "flyin")
     sprites.setDataNumber(mySprite, "targetX", mySprite.x + 14)
@@ -429,8 +429,9 @@ controller.A.onEvent(ControllerButtonEvent.Pressed, function () {
     if (mode == "game") {
         music.play(music.createSoundEffect(WaveShape.Square, 1600, 1, 255, 0, 300, SoundExpressionEffect.None, InterpolationCurve.Curve), music.PlaybackMode.InBackground)
         muzzleFlash(muzzle, myShip)
-        fire_from_shooter_at_angle(myShip, 180)
+        fire_from_shooter_at_angle(myShip, 180, false)
     } else if (mode == "start") {
+        music.play(music.createSong(hex`00f4010408010100001c00010a006400f4016400000400000000000000000000000000050000040c00000010000124100020000129`), music.PlaybackMode.UntilDone)
         sprites.destroy(press_button_text)
         scene.setBackgroundImage(img`
             ................................................................................................................................................................
@@ -560,16 +561,16 @@ controller.A.onEvent(ControllerButtonEvent.Pressed, function () {
 function aimed_shot_from_shooter_to_target (shooter: Sprite, target: Sprite) {
     angle = Math.atan2(target.x - shooter.x, target.y - shooter.y)
     // convert to degrees
-    fire_from_shooter_at_angle(shooter, angle * 57.296)
+    fire_from_shooter_at_angle(shooter, angle * 57.296, false)
 }
 function spreadshot_from_shooter_number_of_shots_starting_angle (shooter: Sprite, num: number, starting_angle: number) {
     if (shooter.kind() == SpriteKind.Enemy) {
         for (let index2 = 0; index2 <= num - 1; index2++) {
-            fire_from_shooter_at_angle(shooter, index2 * 360 / (num - 1) + starting_angle)
+            fire_from_shooter_at_angle(shooter, index2 * 360 / (num - 1) + starting_angle, true)
         }
     } else {
         for (let index3 = 0; index3 <= num - 1; index3++) {
-            fire_from_shooter_at_angle(shooter, index3 * 90 / (num - 1) + starting_angle)
+            fire_from_shooter_at_angle(shooter, index3 * 90 / (num - 1) + starting_angle, true)
         }
     }
 }
@@ -589,7 +590,7 @@ function boss_attack (boss: Sprite) {
         }
         if (!(t % 6 <= 1)) {
             if (t >= sprites.readDataNumber(boss, "shoot timer")) {
-                fire_from_shooter_at_angle(boss, 0)
+                fire_from_shooter_at_angle(boss, 0, false)
                 sprites.setDataNumber(boss, "shoot timer", t + 1)
             }
         }
@@ -628,7 +629,7 @@ function boss_attack (boss: Sprite) {
         }
         if (t >= sprites.readDataNumber(boss, "shoot timer")) {
             spreadshot_from_shooter_number_of_shots_starting_angle(boss, 8, sprites.readDataNumber(boss, "starting angle"))
-            sprites.changeDataNumberBy(boss, "starting angle", 6)
+            sprites.changeDataNumberBy(boss, "starting angle", 12)
             sprites.setDataNumber(boss, "shoot timer", t + 3)
         }
     } else if (sprites.readDataString(boss, "submission") == "mission4") {
@@ -649,11 +650,11 @@ function boss_attack (boss: Sprite) {
         }
         if (t >= sprites.readDataNumber(boss, "shoot timer")) {
             if (sprites.readDataNumber(boss, "vx") < 0) {
-                fire_from_shooter_at_angle(boss, 180)
+                fire_from_shooter_at_angle(boss, 180, false)
             } else if (sprites.readDataNumber(boss, "vy") > 0) {
-                fire_from_shooter_at_angle(boss, 270)
+                fire_from_shooter_at_angle(boss, 270, false)
             } else if (sprites.readDataNumber(boss, "vy") < 0) {
-                fire_from_shooter_at_angle(boss, 90)
+                fire_from_shooter_at_angle(boss, 90, false)
             }
             sprites.setDataNumber(boss, "shoot timer", t + 4)
         }
@@ -836,8 +837,10 @@ function next_wave () {
             sprites.destroy(value)
         }
         if (wave == final_wave) {
+            music.play(music.stringPlayable("E - F C5 - - - - ", 200), music.PlaybackMode.InBackground)
             wave_text = textsprite.create("Final wave")
         } else {
+            music.play(music.stringPlayable("C D F G B C5 - - ", 300), music.PlaybackMode.InBackground)
             wave_text = textsprite.create("Wave " + wave + " of " + final_wave)
         }
         wave_text.setPosition(80, 40)
@@ -1400,10 +1403,10 @@ function start_game () {
         . . . . . . . . . . . . . . . . 
         `, SpriteKind.PlayerExplosion)
     info.setScore(0)
-    info.setLife(max_lives - 1)
+    info.setLife(max_lives)
     next_wave()
 }
-function fire_from_shooter_at_angle (shooter: Sprite, ang: number) {
+function fire_from_shooter_at_angle (shooter: Sprite, ang: number, isSpread: boolean) {
     // turn degrees to radians
     angle = ang / 57.296
     if (shooter.kind() == SpriteKind.Enemy) {
@@ -1460,6 +1463,11 @@ function fire_from_shooter_at_angle (shooter: Sprite, ang: number) {
             . . 4 4 4 4 . . 
             `, shooter, Math.sin(angle) * 200, Math.cos(angle) * 200)
         projectile.setKind(SpriteKind.Bullet)
+        if (isSpread) {
+            sprites.setDataNumber(projectile, "dmg", -3)
+        } else {
+            sprites.setDataNumber(projectile, "dmg", -1)
+        }
     }
 }
 function kill_enemy (sprite: Sprite) {
@@ -2015,6 +2023,7 @@ function prepare_enemy_attack () {
             )
             sprites.setDataNumber(myEnemy, "shoot timer", t + 10)
             sprites.setDataNumber(myEnemy, "starting angle", 0)
+            music.play(music.createSoundEffect(WaveShape.Sawtooth, 200, 3885, 105, 255, 1000, SoundExpressionEffect.Warble, InterpolationCurve.Curve), music.PlaybackMode.InBackground)
         }
         sprites.setDataString(myEnemy, "mission", "attack")
         sprites.setDataNumber(myEnemy, "wait", 60)
@@ -2034,6 +2043,11 @@ function place_enemies () {
                 }
             }
         }
+    }
+    if (wave == final_wave) {
+    	
+    } else {
+        music.play(music.stringPlayable("C5 - A - F - D - ", 320), music.PlaybackMode.InBackground)
     }
 }
 function pop_text (text: string, x: number, y: number) {
@@ -2523,11 +2537,11 @@ sprites.onOverlap(SpriteKind.Player, SpriteKind.EnemyBullet, function (sprite, o
 function enemy_shoot () {
     if (sprites.readDataString(myEnemy, "mission") == "wait") {
         if (sprites.readDataNumber(myEnemy, "type") == 1) {
-            fire_from_shooter_at_angle(myEnemy, 0)
+            fire_from_shooter_at_angle(myEnemy, 0, false)
         } else if (sprites.readDataNumber(myEnemy, "type") == 2) {
             aimed_shot_from_shooter_to_target(myEnemy, myShip)
         } else if (sprites.readDataNumber(myEnemy, "type") == 3) {
-            fire_from_shooter_at_angle(myEnemy, 0)
+            fire_from_shooter_at_angle(myEnemy, 0, false)
         } else if (sprites.readDataNumber(myEnemy, "type") == 4) {
             spreadshot_from_shooter_number_of_shots_starting_angle(myEnemy, 8, randint(0, 45))
         }
@@ -2538,11 +2552,17 @@ sprites.onDestroyed(SpriteKind.Enemy, function (sprite) {
         next_wave()
     }
 })
-function hurt_enemy (sprite: Sprite) {
+function hurt_enemy (sprite: Sprite, bullet: Sprite) {
     music.play(music.melodyPlayable(music.knock), music.PlaybackMode.InBackground)
     sprite.startEffect(effects.fountain, 100)
     if (sprites.readDataString(sprite, "mission") != "flyin") {
-        sprites.changeDataNumberBy(sprite, "hp", -1)
+        if (sprites.readDataNumber(sprite, "type") == 5) {
+            if (sprites.readDataNumber(sprite, "wait") <= 0) {
+                sprites.changeDataNumberBy(sprite, "hp", sprites.readDataNumber(bullet, "dmg"))
+            }
+        } else {
+            sprites.changeDataNumberBy(sprite, "hp", sprites.readDataNumber(bullet, "dmg"))
+        }
         if (sprites.readDataNumber(sprite, "hp") <= 0) {
             if (sprites.readDataNumber(sprite, "type") == 5) {
                 sprite.setFlag(SpriteFlag.GhostThroughSprites, true)
@@ -2578,42 +2598,52 @@ function hurt_enemy (sprite: Sprite) {
             kill_enemy(sprite)
         } else {
             if (sprites.readDataNumber(sprite, "type") == 5) {
-                animation.stopAnimation(animation.AnimationTypes.All, sprite)
-                sprite.setImage(img`
-                    .....44.....77777777.....44.....
-                    44...2414877777557777784142...44
-                    414.862216777551155777612268.414
-                    24126766677575511557577666762142
-                    .242867777777751157777777768242.
-                    .222887777777775577777777788222.
-                    ..8886677777667777667777766888..
-                    ..7788677577766776677757768877..
-                    77666886775777777777757768866677
-                    77776866677551777715577666867777
-                    67666686666777111177766668666676
-                    66666667766666777766666776666666
-                    .667767677766666666667776767766.
-                    ..6877676677776666777766767786..
-                    ...86776776667777776667767768...
-                    .668667766555666666555667766866.
-                    67768667776665111156667776686776
-                    66668666777776666667777766686666
-                    ....676666777751157777666676....
-                    ...67666666677777777666666676...
-                    ...666..6766677777766676..666...
-                    ...66...6766667aa7666676...66...
-                    ........666.66a88a66.666........
-                    ........66....6666....66........
-                    `)
+                if (sprites.readDataNumber(sprite, "wait") <= 0) {
+                    animation.stopAnimation(animation.AnimationTypes.All, sprite)
+                    sprite.setImage(img`
+                        .....44.....77777777.....44.....
+                        44...2414877777557777784142...44
+                        414.862216777551155777612268.414
+                        24126766677575511557577666762142
+                        .242867777777751157777777768242.
+                        .222887777777775577777777788222.
+                        ..8886677777667777667777766888..
+                        ..7788677577766776677757768877..
+                        77666886775777777777757768866677
+                        77776866677551777715577666867777
+                        67666686666777111177766668666676
+                        66666667766666777766666776666666
+                        .667767677766666666667776767766.
+                        ..6877676677776666777766767786..
+                        ...86776776667777776667767768...
+                        .668667766555666666555667766866.
+                        67768667776665111156667776686776
+                        66668666777776666667777766686666
+                        ....676666777751157777666676....
+                        ...67666666677777777666666676...
+                        ...666..6766677777766676..666...
+                        ...66...6766667aa7666676...66...
+                        ........666.66a88a66.666........
+                        ........66....6666....66........
+                        `)
+                }
             }
-            blink(sprite)
             if (sprites.readDataNumber(sprite, "type") == 5) {
-                animation.runImageAnimation(
-                sprite,
-                assets.animation`myAnim`,
-                200,
-                true
-                )
+                if (sprites.readDataNumber(sprite, "wait") <= 0) {
+                    blink(sprite)
+                }
+            } else {
+                blink(sprite)
+            }
+            if (sprites.readDataNumber(sprite, "type") == 5) {
+                if (sprites.readDataNumber(sprite, "wait") <= 0) {
+                    animation.runImageAnimation(
+                    sprite,
+                    assets.animation`myAnim`,
+                    200,
+                    true
+                    )
+                }
             }
         }
     }
