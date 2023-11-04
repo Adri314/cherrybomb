@@ -345,8 +345,8 @@ controller.B.onEvent(ControllerButtonEvent.Pressed, function () {
         if (app > 0) {
             music.play(music.createSoundEffect(WaveShape.Square, 1600, 1, 255, 0, 300, SoundExpressionEffect.None, InterpolationCurve.Curve), music.PlaybackMode.InBackground)
             muzzleFlash(muzzle, myShip)
-            spreadshot_from_shooter_number_of_shots_starting_angle(myShip, app + 2, 135)
-            app = 0
+            spreadshot_from_shooter_number_of_shots_starting_angle(myShip, 6, 135)
+            app += -1
             apple_text.setText("X" + convertToText(app))
         } else {
             music.play(music.melodyPlayable(music.thump), music.PlaybackMode.InBackground)
