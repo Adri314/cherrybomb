@@ -345,7 +345,7 @@ controller.B.onEvent(ControllerButtonEvent.Pressed, function () {
         if (app > 0) {
             music.play(music.createSoundEffect(WaveShape.Square, 1600, 1, 255, 0, 300, SoundExpressionEffect.None, InterpolationCurve.Curve), music.PlaybackMode.InBackground)
             muzzleFlash(muzzle, myShip)
-            spreadshot_from_shooter_number_of_shots_starting_angle(myShip, 6, 135)
+            spreadshot_from_shooter_number_of_shots_starting_angle(myShip, 6, 150)
             app += -1
             apple_text.setText("X" + convertToText(app))
         } else {
@@ -590,7 +590,7 @@ function spreadshot_from_shooter_number_of_shots_starting_angle (shooter: Sprite
         }
     } else {
         for (let index3 = 0; index3 <= num - 1; index3++) {
-            fire_from_shooter_at_angle(shooter, index3 * 90 / (num - 1) + starting_angle, true)
+            fire_from_shooter_at_angle(shooter, index3 * 60 / (num - 1) + starting_angle, true)
         }
     }
 }
